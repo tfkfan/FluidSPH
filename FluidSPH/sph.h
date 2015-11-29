@@ -12,15 +12,15 @@ struct GridElement;
 struct Particle {
 
 	int id;
-	float mass;
-	float density;
-	Vector3f position;
-	Vector3f velocity;
-	Vector3f force;
-	Vector3f color_gradient;
-	float color_laplacian;
-	Vector3f viscosity_force;
-	Vector3f pressure_force;
+	double mass;
+	double density;
+	Vector2d position;
+	Vector2d velocity;
+	Vector2d force;
+	Vector2d color_gradient;
+	double color_laplacian;
+	Vector2d viscosity_force;
+	Vector2d pressure_force;
 	Particle() { mass = 1.0f; }
 };
 
@@ -28,42 +28,33 @@ struct GridElement {
 	list<Particle> particles;
 };
 
-struct FluidMaterial {
-	const float gas_constant;
-	const float mu;
-	const float rest_density;
-	const float sigma;
-	const float point_damping;
-	FluidMaterial(float gas_constant, float mu, float rest_density, float sigma, float point_damping)
-	  : gas_constant(gas_constant), mu(mu), rest_density(rest_density), sigma(sigma), point_damping(point_damping) {}
-};
+const double gas_constant = 1000.0;
+const double mu =  0.1; 
+const double rest_density = 1.2; 
+const double sigma = 1.0;
+const double point_damping = 3;
+const double core_radius = 1.5;
+const double timestep = 0.01;
 
 class SphFluidSolver {
 	const int grid_width;
 	const int grid_height;
-	const int grid_depth;
-	const float core_radius;
-	const float timestep;
-	const FluidMaterial material;
 	GridElement *grid_elements;
 	GridElement *sleeping_grid_elements;
 public:
-	SphFluidSolver(float domain_width, float domain_height, float domain_depth, float core_radius, float timestep, FluidMaterial material) 
-		: grid_width((int) (domain_width / core_radius) + 1), grid_height((int) (domain_height / core_radius) + 1), grid_depth((int) (domain_depth / core_radius) + 1),
-	  core_radius(core_radius), timestep(timestep), material(material) {}
+	SphFluidSolver(double domain_width, double domain_height) 
+		: grid_width((int) (domain_width / core_radius) + 1), grid_height((int) (domain_height / core_radius) + 1) {}
 
 	void update(void(*inter_hook)() = NULL, void(*post_hook)() = NULL);
 	void init_particles(Particle *particles, int count);
 	template <typename Function>
 	void foreach_particle(Function function) {
-		for (int k = 0; k < grid_depth; k++) {
-			for (int j = 0; j < grid_height; j++) {
-				for (int i = 0; i < grid_width; i++) {
-					GridElement &grid_element = grid_elements[grid_width * (k * grid_height + j) + i];
-					list<Particle> &plist = grid_element.particles;
-					for (list<Particle>::iterator piter = plist.begin(); piter != plist.end(); piter++) {
-						function(*piter);
-					}
+		for (int j = 0; j < grid_height; j++) {
+			for (int i = 0; i < grid_width; i++) {
+				GridElement &grid_element = grid_elements[grid_height*j + i];
+				list<Particle> &plist = grid_element.particles;
+				for (list<Particle>::iterator piter = plist.begin(); piter != plist.end(); piter++) {
+					function(*piter);
 				}
 			}
 		}
@@ -71,41 +62,41 @@ public:
 
 private:
 
-	float kernel(const Vector3f &r, const float h);
+	double kernel(const Vector2d &r);
 
-	Vector3f gradient_kernel(const Vector3f &r, const float h);
+	Vector2d gradient_kernel(const Vector2d &r);
 
-	float laplacian_kernel(const Vector3f &r, const float h);
+	double laplacian_kernel(const Vector2d &r);
 
-	Vector3f gradient_pressure_kernel(const Vector3f &r, const float h);
+	Vector2d gradient_pressure_kernel(const Vector2d &r);
 
-	float laplacian_viscosity_kernel(const Vector3f &r, const float h);
+	double laplacian_viscosity_kernel(const Vector2d &r);
 
 	void add_density(Particle &particle, Particle &neighbour);
 
 	void sum_density(GridElement &grid_element, Particle &particle);
 
-	void sum_all_density(int i, int j, int k, Particle &particle);
+	void sum_all_density(int i, int j, Particle &particle);
 
-	void update_densities(int i, int j, int k);
+	void update_densities(int i, int j);
 
 	void add_forces(Particle &particle, Particle &neighbour);
 
 	void sum_forces(GridElement &grid_element, Particle &particle);
 
-	void sum_all_forces(int i, int j, int k, Particle &particle);
+	void sum_all_forces(int i, int j, Particle &particle);
 
-	void update_forces(int i, int j, int k);
+	void update_forces(int i, int j);
 
 	void update_particle(Particle &particle);
 
-	void update_particles(int i, int j, int k);
+	void update_particles(int i, int j);
 
 	void reset_particle(Particle &particle);
 
 	void reset_particles();
 
-	void insert_into_grid(int i, int j, int k);
+	void insert_into_grid(int i, int j);
 
 	void update_grid();
 
@@ -115,11 +106,11 @@ private:
 
 	void update_particles();
 
-	GridElement &grid(int i, int j, int k);
+	GridElement &grid(int i, int j);
 
-	GridElement &sleeping_grid(int i, int j, int k);
+	GridElement &sleeping_grid(int i, int j);
 
-	int grid_index(int i, int j, int k);
+	int grid_index(int i, int j);
 
 	void add_to_grid(GridElement *target_grid, Particle &particle);
 };

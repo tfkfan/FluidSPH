@@ -1,199 +1,145 @@
 /* $Id: Vector.h,v 1.1.1.1 2005/05/01 15:18:55 ovidiom Exp $ */
 
-#ifndef _VECTOR3F_H_
-#define _VECTOR3F_H_
+#ifndef _VECTOR2D_H_
+#define _VECTOR2D_H_
 
 #include <cmath>
 
 
-struct Vector3f
+struct Vector2d
 {
-	float	x, y, z;
+	double	x, y;
 
-	inline Vector3f()
-	{
-		x = y = z = 0.0f;
+	inline Vector2d(){
+		x = y = 0.0;
 	}
 	
-	inline Vector3f(float x, float y, float z)
-	{
+	inline Vector2d(double x, double y){
 		this->x = x;
 		this->y = y;
-		this->z = z;
 	}
 	
-	inline Vector3f(float xyz)
-	{
-		x = y = z = xyz;
+	inline Vector2d(double xy){
+		x = y = xy;
 	}
 
-	inline Vector3f(const float *xyzArr)
-	{
-		x = xyzArr[0];
-		y = xyzArr[1];
-		z = xyzArr[2];
+	inline Vector2d(const double *xyArr){
+		x = xyArr[0];
+		y = xyArr[1];
 	}
 	
-	inline operator const float *() const
-	{
-		return ((const float *)&x);
-	}
-	
-	inline float &operator[](unsigned int idx)
-	{
-		return (*(((float *)&x) + idx));
-	}
-	
-	inline void operator +=(float s)
-	{
+	inline void operator +=(double s){
 		x += s;
 		y += s;
-		z += s;
 	}
 	
-	inline void operator +=(const Vector3f &v)
-	{
+	inline void operator +=(const Vector2d &v){
 		x += v.x;
 		y += v.y;
-		z += v.z;
 	}
 	
-	inline void operator -=(float s)
-	{
+	inline void operator -=(double s){
 		x -= s;
 		y -= s;
-		z -= s;
 	}
 	
-	inline void operator -=(const Vector3f &v)
-	{
+	inline void operator -=(const Vector2d &v){
 		x -= v.x;
 		y -= v.y;
-		z -= v.z;
 	}
 	
-	inline void operator *=(float s)
-	{
+	inline void operator *=(double s){
 		x *= s;
 		y *= s;
-		z *= s;
 	}
 	
-	inline void operator *=(const Vector3f &v)
-	{
+	inline void operator *=(const Vector2d &v){
 		x *= v.x;
 		y *= v.y;
-		z *= v.z;
 	}
 	
-	inline void operator /=(float s)
-	{
-		float	inv = 1.0f / s;
+	inline void operator /=(double s){
+		double	inv = 1.0 / s;
 
 		x *= inv;
 		y *= inv;
-		z *= inv;
 	}
 
-	inline void operator /=(const Vector3f &v)
-	{
+	inline void operator /=(const Vector2d &v){
 		x /= v.x;
 		y /= v.y;
-		z /= v.z;
 	}
 };
 
 
-inline Vector3f operator +(const Vector3f &v, float s)
-{
-	return (Vector3f(v.x + s, v.y + s, v.z + s));
+inline Vector2d operator +(const Vector2d &v, double s){
+	return (Vector2d(v.x + s, v.y + s));
 }
 
-inline Vector3f operator +(float s, const Vector3f &v)
-{
-	return (Vector3f(s + v.x, s + v.y, s + v.z));
+inline Vector2d operator +(double s, const Vector2d &v){
+	return (Vector2d(s + v.x, s + v.y));
 }
 
-inline Vector3f operator +(const Vector3f &u, const Vector3f &v)
-{
-	return (Vector3f(u.x + v.x, u.y + v.y, u.z + v.z));
+inline Vector2d operator +(const Vector2d &u, const Vector2d &v){
+	return (Vector2d(u.x + v.x, u.y + v.y));
 }
 
-inline Vector3f operator -(const Vector3f &v, float s)
-{
-	return (Vector3f(v.x - s, v.y - s, v.z - s));
+inline Vector2d operator -(const Vector2d &v, double s){
+	return (Vector2d(v.x - s, v.y - s));
 }
 
-inline Vector3f operator -(float s, const Vector3f &v)
-{
-	return (Vector3f(s - v.x, s - v.y, s - v.z));
+inline Vector2d operator -(double s, const Vector2d &v){
+	return (Vector2d(s - v.x, s - v.y));
 }
 
-inline Vector3f operator -(const Vector3f &u, const Vector3f &v)
-{
-	return (Vector3f(u.x - v.x, u.y - v.y, u.z - v.z));
+inline Vector2d operator -(const Vector2d &u, const Vector2d &v){
+	return (Vector2d(u.x - v.x, u.y - v.y));
 }
 
-inline Vector3f operator *(const Vector3f &v, float s)
-{
-	return (Vector3f(v.x * s, v.y * s, v.z * s));
+inline Vector2d operator *(const Vector2d &v, double s){
+	return (Vector2d(v.x * s, v.y * s));
 }
 
-inline Vector3f operator *(float s, const Vector3f &v)
-{
-	return (Vector3f(s * v.x, s * v.y, s * v.z));
+inline Vector2d operator *(double s, const Vector2d &v){
+	return (Vector2d(s * v.x, s * v.y));
 }
 
-inline Vector3f operator *(const Vector3f &u, const Vector3f &v)
-{
-	return (Vector3f(u.x * v.x, u.y * v.y, u.z * v.z));
+inline Vector2d operator *(const Vector2d &u, const Vector2d &v){
+	return (Vector2d(u.x * v.x, u.y * v.y));
 }
 
-inline Vector3f operator /(const Vector3f &v, float s)
-{
-	float	inv = 1.0f / s;
+inline Vector2d operator /(const Vector2d &v, double s){
+	double	inv = 1.0f / s;
 
-	return (Vector3f(v.x * inv, v.y * inv, v.z * inv));
+	return (Vector2d(v.x * inv, v.y * inv));
 }
 
-inline Vector3f operator /(float s, const Vector3f &v)
-{
-	return (Vector3f(s / v.x, s / v.y, s / v.z));
+inline Vector2d operator /(double s, const Vector2d &v){
+	return (Vector2d(s / v.x, s / v.y));
 }
 
-inline Vector3f operator /(const Vector3f &u, const Vector3f &v)
-{
-	return (Vector3f(u.x / v.x, u.y / v.y, u.z / v.z));
+inline Vector2d operator /(const Vector2d &u, const Vector2d &v){
+	return (Vector2d(u.x / v.x, u.y / v.y));
 }
 
-inline Vector3f operator -(const Vector3f &v)
-{
-	return (Vector3f(-v.x, -v.y, -v.z));
+inline Vector2d operator -(const Vector2d &v){
+	return (Vector2d(-v.x, -v.y));
 }
 
-inline float dot(const Vector3f &u, const Vector3f &v)
-{
-	return (u.x * v.x + u.y * v.y + u.z * v.z);
+inline double dot(const Vector2d &u, const Vector2d &v){
+	return (u.x * v.x + u.y * v.y);
 }
 
-inline Vector3f cross(const Vector3f &u, const Vector3f &v)
+inline double length(const Vector2d &v)
 {
-	return (Vector3f(u.y * v.z - v.y * u.z,
-	                 u.z * v.x - u.x * v.z,
-	                 u.x * v.y - u.y * v.x));
+	return sqrt(v.x * v.x + v.y * v.y);
 }
 
-inline float length(const Vector3f &v)
-{
-	return ((float)sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
-}
-
-inline Vector3f normalize(const Vector3f &v)
-{
+inline Vector2d normalize(const Vector2d &v){
 	return (v / length(v));
 }
 
 
 
-#endif /* _VECTOR3F_H_ */
+#endif /* _VECTOR2D_H_ */
 
