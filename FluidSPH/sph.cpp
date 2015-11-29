@@ -22,13 +22,6 @@ using namespace std;
 inline double SphFluidSolver::kernel(const Vector2d &r) {
 	return 315.0f / (64.0f * PI_FLOAT * POW9(core_radius)) * CUBE(SQR(core_radius) - dot(r, r));
 }
-inline Vector2d SphFluidSolver::gradient_kernel(const Vector2d &r) {
-	return -945.0f / (32.0f * PI_FLOAT * POW9(core_radius)) * SQR(SQR(core_radius) - dot(r, r)) * r;
-}
-inline double SphFluidSolver::laplacian_kernel(const Vector2d &r) {
-	return   945.0f / (32.0f * PI_FLOAT * POW9(core_radius))
-	       * (SQR(core_radius) - dot(r, r)) * (7.0f * dot(r, r) - 3.0f * SQR(core_radius));
-}
 inline Vector2d SphFluidSolver::gradient_pressure_kernel(const Vector2d &r) {
 	if (dot(r, r) < SQR(0.001f)) 
 		return Vector2d(0.0f);
@@ -38,14 +31,12 @@ inline double SphFluidSolver::laplacian_viscosity_kernel(const Vector2d &r) {
 	return 45.0f / (PI_FLOAT * POW6(core_radius)) * (core_radius - length(r));
 }
 inline void SphFluidSolver::add_density(Particle &particle, Particle &neighbour) {
-	if (particle.id > neighbour.id) 
-		return;
 	Vector2d r = particle.position - neighbour.position;
 	if (dot(r, r) > SQR(core_radius)) 
 		return;
     float common = kernel(r);
-    particle.density += neighbour.mass * common;
-	neighbour.density += particle.mass * common;
+    particle.density += mass * common;
+	neighbour.density += mass * common;
 }
 void SphFluidSolver::sum_density(GridElement &grid_element, Particle &particle) {
 	list<Particle> &plist = grid_element.particles;
@@ -71,8 +62,6 @@ void SphFluidSolver::update_densities(int i, int j) {
 		sum_all_density(i, j, *piter);
 }
 inline void SphFluidSolver::add_forces(Particle &particle, Particle &neighbour) {
-	if (particle.id >= neighbour.id) 
-		return;
 	Vector2d r = particle.position - neighbour.position;
 	if (dot(r, r) > SQR(core_radius)) 
 		return;
@@ -80,25 +69,18 @@ inline void SphFluidSolver::add_forces(Particle &particle, Particle &neighbour) 
 	Vector2d common = 0.5f * gas_constant
 			* ((particle.density - rest_density) + (neighbour.density - rest_density))
 	        * gradient_pressure_kernel(r);
-	particle.force += -neighbour.mass / neighbour.density * common;
-	particle.pressure_force += -neighbour.mass / neighbour.density * common;
-	neighbour.force -= -particle.mass / particle.density * common;
-	neighbour.pressure_force -= -particle.mass / particle.density * common;
+	particle.force += -mass / neighbour.density * common;
+	particle.pressure_force += -mass / neighbour.density * common;
+	neighbour.force -= -mass / particle.density * common;
+	neighbour.pressure_force -= -mass / particle.density * common;
 	/* Compute the viscosity force. */
 	common = mu * (neighbour.velocity - particle.velocity)
 	         * laplacian_viscosity_kernel(r);
-	particle.force += neighbour.mass / neighbour.density * common;
-	particle.viscosity_force += neighbour.mass / neighbour.density * common;
-	neighbour.force -= particle.mass / particle.density * common;
-	neighbour.viscosity_force -= particle.mass / particle.density * common;
+	particle.force += mass / neighbour.density * common;
+	particle.viscosity_force += mass / neighbour.density * common;
+	neighbour.force -= mass / particle.density * common;
+	neighbour.viscosity_force -= mass / particle.density * common;
 	/* Compute the gradient of the color field. */
-	common = gradient_kernel(r);
-	particle.color_gradient += neighbour.mass / neighbour.density * common;
-	neighbour.color_gradient -= particle.mass / particle.density * common;
-	/* Compute the laplacian of the color field. */
-	float value = laplacian_kernel(r);
-	particle.color_laplacian += neighbour.mass / neighbour.density * value;
-	neighbour.color_laplacian += particle.mass / particle.density * value;
 }
 void SphFluidSolver::sum_forces(GridElement &grid_element, Particle &particle) {
 	list<Particle>  &plist = grid_element.particles;
@@ -121,10 +103,7 @@ void SphFluidSolver::update_forces(int i, int j) {
 		sum_all_forces(i, j, *piter);
 }
 inline void SphFluidSolver::update_particle(Particle &particle) {
-	if (length(particle.color_gradient) > 0.001f) 
-		particle.force +=-sigma * particle.color_laplacian*normalize(particle.color_gradient);
-
-	Vector2d acceleration =   particle.force / particle.density - point_damping * particle.velocity / particle.mass;
+	Vector2d acceleration =  particle.force / particle.density - point_damping * particle.velocity / mass;
 	particle.velocity += timestep * acceleration;
 	particle.position += timestep * particle.velocity;
 }
@@ -139,8 +118,6 @@ inline void SphFluidSolver::reset_particle(Particle &particle) {
 	particle.force = Vector2d(0.0);
 	particle.viscosity_force = Vector2d(0.0);
 	particle.pressure_force = Vector2d(0.0);
-	particle.color_gradient = Vector2d(0.0);
-	particle.color_laplacian = 0.0;
 }
 void SphFluidSolver::reset_particles() {
 	for (int j = 0; j < grid_height; j++) {
@@ -199,10 +176,8 @@ void SphFluidSolver::update(void(*inter_hook)(), void(*post_hook)()) {
 void SphFluidSolver::init_particles(Particle *particles, int count) {
 	grid_elements = new GridElement[grid_width * grid_height];
 	sleeping_grid_elements = new GridElement[grid_width * grid_height];
-	for (int x = 0; x < count; x++) {
-		particles[x].id = x;
+	for (int x = 0; x < count; x++) 
 		add_to_grid(grid_elements, particles[x]);
-	}
 }
 inline GridElement &SphFluidSolver::grid(int i, int j) {
 	return grid_elements[grid_index(i, j)];

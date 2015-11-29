@@ -10,18 +10,14 @@ struct GridElement;
 #define _SPH_H_
 #include "Vector.h"
 struct Particle {
-
-	int id;
-	double mass;
 	double density;
 	Vector2d position;
 	Vector2d velocity;
 	Vector2d force;
-	Vector2d color_gradient;
-	double color_laplacian;
+	double red, green, blue;
 	Vector2d viscosity_force;
 	Vector2d pressure_force;
-	Particle() { mass = 1.0f; }
+	Particle() { }
 };
 
 struct GridElement {
@@ -29,12 +25,12 @@ struct GridElement {
 };
 
 const double gas_constant = 1000.0;
-const double mu =  0.1; 
-const double rest_density = 1.2; 
-const double sigma = 1.0;
+const double mu =  0.001; 
+const double rest_density = 1.3; 
 const double point_damping = 3;
 const double core_radius = 1.5;
 const double timestep = 0.01;
+const double mass = 1.0;
 
 class SphFluidSolver {
 	const int grid_width;
