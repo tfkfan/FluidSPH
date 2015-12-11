@@ -62,17 +62,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="GL.H" />
-    <ClInclude Include="glaux.h" />
-    <ClInclude Include="GLU.H" />
-    <ClInclude Include="glui.h" />
-    <ClInclude Include="glut.h" />
-    <ClInclude Include="sph.h" />
-    <ClInclude Include="Vector.h" />
+    <ClInclude Include="SPHSystem.h" />
+    <ClInclude Include="Vector2D.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="sph.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="SPHSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

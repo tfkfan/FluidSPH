@@ -15,33 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="glut.h">
+    <ClInclude Include="SPHSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GLU.H">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GL.H">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glaux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sph.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Vector.h">
+    <ClInclude Include="Vector2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="SPHSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sph.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
