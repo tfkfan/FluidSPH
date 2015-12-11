@@ -21,12 +21,12 @@ SPHSystem::SPHSystem(){
 	
 	//params
 	gravity.x = 0.0f;
-	gravity.y = -1.8f;
+	gravity.y = -9.8f;
 	stiffness = 1000.0f;
 	restDensity = 1000.0f;
-	timeStep = 0.002f;
+	timeStep = 0.0005f;
 	wallDamping = 0.0f;
-	viscosity = 8.0f;
+	viscosity = 8.1f;
 
 	particles = new Particle[maxParticle];
 	cells = new Cell[totCell];
