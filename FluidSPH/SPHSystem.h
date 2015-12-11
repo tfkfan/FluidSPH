@@ -37,9 +37,9 @@ public:
 	uint calcCellHash(Vec2i pos);
 
 	//kernel function
-	float poly6(float r2){ return 315.0f/(64.0f * PI * pow(kernel, 9)) * pow(kernel*kernel-r2, 3); }
-	float spiky(float r){ return -45.0f/(PI * pow(kernel, 6)) * (kernel-r) * (kernel-r); }
-	float visco(float r){ return 45.0f/(PI * pow(kernel, 6)) * (kernel-r); }
+	float poly6(float r2){ return 315.0f/(64.0f * PI * pow(kernel_radius, 9)) * pow(kernel_radius*kernel_radius-r2, 3); }
+	float spiky(float r){ return -45.0f/(PI * pow(kernel_radius, 6)) * (kernel_radius-r) * (kernel_radius-r); }
+	float visco(float r){ return 45.0f/(PI * pow(kernel_radius, 6)) * (kernel_radius-r); }
 
 	//animation
 	void compTimeStep();
@@ -49,7 +49,7 @@ public:
 	void advection();
 	void animation();
 
-	//getter
+	//getters
 	uint getNumParticle(){ return numParticle; }
 	Vec2f getWorldSize(){ return worldSize; }
 	Particle* getParticles(){ return particles; }
@@ -57,7 +57,7 @@ public:
 
 
 private:
-	float kernel;
+	float kernel_radius;
 	float mass;
 
 	uint maxParticle;
