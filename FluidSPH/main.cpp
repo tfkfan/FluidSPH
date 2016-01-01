@@ -55,11 +55,9 @@ void reshapeFunc(int width, int height){
 	glutReshapeWindow(winX, winY);
 }
 
-int nParticles = 4000;
-
 int main(int argc, char **argv){
 	sph = new SPHSystem();
-	sph->initFluid(nParticles);
+	sph->initFluid();
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutInitWindowSize(winX, winY);

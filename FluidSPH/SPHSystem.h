@@ -31,7 +31,7 @@ class SPHSystem
 public:
 	SPHSystem();
 	~SPHSystem();
-	void initFluid(int nParticles);
+	void initFluid();
 	void addSingleParticle(Vec2f pos, Vec2f vel);
 	Vec2i calcCellPos(Vec2f pos);
 	uint calcCellHash(Vec2i pos);

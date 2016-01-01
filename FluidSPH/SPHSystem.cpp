@@ -9,14 +9,14 @@ SPHSystem::SPHSystem(){
 	kernel_radius = 0.04f;
 	mass = 0.02f;
 
-	maxParticle = 10000;
+	maxParticle = 4000;
 	numParticle = 0;
 
 	worldSize.x = 2.56f;
 	worldSize.y = 2.56f;
 	cellSize = kernel_radius;
-	gridSize.x = (int)(worldSize.x/cellSize);
-	gridSize.y = (int)(worldSize.y/cellSize);
+	gridSize.x = (int)(worldSize.x/cellSize)+2;
+	gridSize.y = (int)(worldSize.y/cellSize)+2;
 	totCell = (uint)(gridSize.x) * (uint)(gridSize.y);
 	
 	//params
@@ -42,15 +42,14 @@ SPHSystem::~SPHSystem(){
 	free(cells);
 }
 
-void SPHSystem::initFluid(int nParticles){
+void SPHSystem::initFluid(){
 	Vec2f pos;
 	Vec2f vel(0.0f, 0.0f);
 	float x = 0 , y = worldSize.y;
 	float dx = kernel_radius*0.8,dy = kernel_radius*0.8;
 
-	maxParticle = nParticles;
 
-	for(int i = 0; i < nParticles; i++, x+=dx){
+	for(int i = 0; i < maxParticle; i++, x+=dx){
 		if(x>=worldSize.x){
 			x=0;
 			y-=dy;
@@ -81,8 +80,9 @@ Vec2i SPHSystem::calcCellPos(Vec2f pos){
 }
 	
 uint SPHSystem::calcCellHash(Vec2i pos){
-	if(pos.x<0 || pos.x>=gridSize.x || pos.y<0 || pos.y>=gridSize.y)
+	if(pos.x<0 || pos.x>=gridSize.x || pos.y<0 || pos.y>=gridSize.y){
 		return 0xffffffff;
+	}
 
 	uint hash = (uint)(pos.y) * (uint)(gridSize.x) + (uint)(pos.x);
 	if(hash >= totCell){
@@ -114,8 +114,10 @@ void SPHSystem::buildGrid(){
 	uint hash;
 	for(uint i=0; i<numParticle; i++){
 		p = &(particles[i]);
+
 		hash = calcCellHash(calcCellPos(p->pos));
 
+		Cell cell = cells[hash];
 		if(cells[hash].head == NULL){
 			p->next = NULL;
 			cells[hash].head = p;
@@ -126,6 +128,7 @@ void SPHSystem::buildGrid(){
 		}
 	}
 }
+
 
 void SPHSystem::compDensPressure(){
 	Particle *p;
@@ -152,7 +155,7 @@ void SPHSystem::compDensPressure(){
 					Vec2f distVec = np->pos - p->pos;
 					float dist2 = distVec.LengthSquared();
 					
-					if(dist2<INF || dist2>=kernel_radius*kernel_radius){
+					if(dist2<INF || dist2>=kernel_radius*kernel_radius ){
 						np = np->next;
 						continue;
 					}
@@ -192,6 +195,7 @@ void SPHSystem::compForce(){
 
 					if(dist2 < kernel_radius*kernel_radius && dist2 > INF){
 						float dist = sqrt(dist2);
+						
 						float V = mass / p->dens;
 
 						float tempForce = V * (p->pres+np->pres) * spiky(dist);
@@ -223,8 +227,8 @@ void SPHSystem::advection(){
 			p->pos.x = 0.0f;
 		}
 		if(p->pos.x >= worldSize.x){
-			p->vel.x = p->vel.x * wallDamping;
-			p->pos.x = worldSize.x - 0.0001f;
+			p->vel.x = 3;
+			p->pos.x = 0.05f;
 		}
 		if(p->pos.y < 0.0f){
 			p->vel.y = p->vel.y * wallDamping;
