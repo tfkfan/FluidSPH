@@ -27,10 +27,14 @@ void drawParticles(){
 	Particle *p = sph->getParticles();
 	glColor3f(0.2f, 0.2f, 1.0f);
 	glPointSize(5.0f);
-
+	Cell** cells = sph->getCells();
 	glBegin(GL_POINTS);
-	for(uint i=0; i<sph->getNumParticle(); i++)
-		glVertex2f(p[i].pos.x, p[i].pos.y);
+	for(int i = 0 ; i < sph->gridSize.x; i++)
+		for(int j = 0;j < sph->gridSize.y; j++){
+			Cell cell = cells[i][j];
+			for (list<Particle>::iterator it = cell.pList->begin(); it != cell.pList->end(); it++)
+				glVertex2f(it->pos.x, it->pos.y);
+		}
 	glEnd();
 }
 

@@ -34,6 +34,11 @@ SPHSystem::SPHSystem(){
 	for(int i=0;i<gridSize.x;i++)
 		cells[i] = new Cell[gridSize.y];
 
+	for(int i=0;i<gridSize.x;i++)
+		for(int j=0;j<gridSize.y;j++)
+			cells[i][j].pList = new list<Particle>();
+		
+
 	cout << "SPHSystem:" << endl;
 	cout << "GridSizeX:" << gridSize.x << endl;
 	cout << "GridSizeY:" << gridSize.y << endl;
@@ -98,13 +103,14 @@ void SPHSystem::compTimeStep(){
 void SPHSystem::buildGrid(){
 	for(int i=0;i<gridSize.x;i++)
 		for(int j=0;j<gridSize.y;j++)
-			cells[i][j].pList.clear();
+			cells[i][j].pList->clear();
+		
 	
 	for(int i=0;i<maxParticle;i++){
 			Vec2i index = calcCellPos(particles[i].pos);
 			
 			Cell& c = cells[index.x][index.y];
-			list<Particle>& l = c.pList;
+			list<Particle>& l = *c.pList;
 			l.push_back(particles[i]);
 		}
 }
@@ -121,7 +127,7 @@ void SPHSystem::compNearDensPressure(Particle& p, Vec2i cellPos){
 			if(nearPos.x<0||nearPos.x>=gridSize.x||nearPos.y<0||nearPos.y>=gridSize.y)
 				continue;
 
-			list<Particle>& np = cells[nearPos.x][nearPos.y].pList;
+			list<Particle>& np = *cells[nearPos.x][nearPos.y].pList;
 
 			if(np.empty())
 				continue;
@@ -144,20 +150,49 @@ void SPHSystem::compDensPressure(){
 
 	for(int i = 0 ; i < gridSize.x; i++)
 		for(int j = 0;j < gridSize.y; j++){
-
 			Cell cell = cells[i][j];
-
 			cellPos.x = i;
 			cellPos.y = j;
 
-			for (list<Particle>::iterator p_it = cell.pList.begin(); p_it != cell.pList.end(); p_it++)
+			for (list<Particle>::iterator p_it = cell.pList->begin(); p_it != cell.pList->end(); p_it++)
 				compNearDensPressure(*p_it, cellPos);
 		}
 }
 
+void SPHSystem::compNearForce(Particle& p,Vec2i cellPos){
+	Vec2i nearPos;
+	for(int m = -1; m <= 1; m++)
+		for(int n = -1; n <= 1; n++){
+			nearPos.x = cellPos.x + n;
+			nearPos.y = cellPos.y + m;
+
+			if(nearPos.x<0||nearPos.x>=gridSize.x||nearPos.y<0||nearPos.y>=gridSize.y)
+				continue;
+
+			list<Particle>& np = *cells[nearPos.x][nearPos.y].pList;
+			if(!np.empty()){
+				for (list<Particle>::iterator it = np.begin(); it != np.end(); it++){
+					Vec2f distVec = p.pos - it->pos;
+					float dist2 = distVec.LengthSquared();
+
+					if(dist2 < kernel_radius*kernel_radius && dist2 > INF){
+						float dist = sqrt(dist2);
+						float V = mass / it->dens;
+
+						float tempForce = V * (p.pres + it->pres) * spiky(dist);
+						p.acc = p.acc - distVec*tempForce/dist;
+
+						Vec2f relVel;
+						relVel = it->ev-p.ev;
+						tempForce = V * viscosity * visco(dist);
+						p.acc = p.acc + relVel*tempForce; 
+					}
+				}
+			}
+		}
+}
 void SPHSystem::compForce(){
 	Vec2i cellPos;
-	Vec2i nearPos;
 	for(int i = 0 ; i < gridSize.x; i++)
 		for(int j = 0;j < gridSize.y; j++){
 
@@ -166,46 +201,15 @@ void SPHSystem::compForce(){
 			cellPos.x = i;
 			cellPos.y = j;
 
-			for (list<Particle>::iterator p_it = cell.pList.begin(); p_it != cell.pList.end(); p_it++){
-				Particle& p = *p_it;
-
-				for(int m = -1; m <= 1; m++)
-					for(int n = -1; n <= 1; n++){
-						nearPos.x = cellPos.x + n;
-						nearPos.y = cellPos.y + m;
-
-						if(nearPos.x<0||nearPos.x>=gridSize.x||nearPos.y<0||nearPos.y>=gridSize.y)
-							continue;
-
-						list<Particle>& np = cells[nearPos.x][nearPos.y].pList;
-						if(!np.empty()){
-							for (list<Particle>::iterator it = np.begin(); it != np.end(); it++){
-								Vec2f distVec = p.pos - it->pos;
-								float dist2 = distVec.LengthSquared();
-
-								if(dist2 < kernel_radius*kernel_radius && dist2 > INF){
-									float dist = sqrt(dist2);
-									float V = mass / it->dens;
-
-									float tempForce = V * (p.pres + it->pres) * spiky(dist);
-									p.acc = p.acc - distVec*tempForce/dist;
-
-									Vec2f relVel;
-									relVel = it->ev-p.ev;
-									tempForce = V * viscosity * visco(dist);
-									p.acc = p.acc + relVel*tempForce; 
-								}
-							}
-						}
-					}
-			}
+			for (list<Particle>::iterator p_it = cell.pList->begin(); p_it != cell.pList->end(); p_it++)
+				compNearForce(*p_it,cellPos);
 		}
 }
 
 void SPHSystem::advection(){
 	for(int i = 0 ; i < gridSize.x; i++)
 		for(int j = 0;j < gridSize.y; j++){
-			list<Particle>& l = cells[i][j].pList;
+			list<Particle>& l = *cells[i][j].pList;
 			for (list<Particle>::iterator it = l.begin(); it != l.end(); it++){
 				Particle& p = *it;
 				p.vel = p.vel + p.acc*timeStep;

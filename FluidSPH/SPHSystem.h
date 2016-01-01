@@ -30,7 +30,7 @@ public:
 
 class Cell{
 public:
-	list<Particle> pList;
+	list<Particle> *pList;
 };
 
 class SPHSystem{
@@ -58,7 +58,8 @@ public:
 	Vec2f getWorldSize(){ return worldSize; }
 	Particle* getParticles(){ return particles; }
 	Cell** getCells(){ return cells; }
-
+	
+	Vec2i gridSize;
 
 private:
 	float kernel_radius;
@@ -67,7 +68,6 @@ private:
 	uint maxParticle;
 	uint numParticle;
 
-	Vec2i gridSize;
 	Vec2f worldSize;
 	float cellSize;
 	uint totCell;
@@ -84,6 +84,7 @@ private:
 	Cell **cells;
 
 	void compNearDensPressure(Particle& p, Vec2i cellPos);
+	void compNearForce(Particle& p,Vec2i cellPos);
 };
 
 #endif
