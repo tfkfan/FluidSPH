@@ -2,12 +2,14 @@
 #define __SPHSYSTEM_H__
 
 #include "Vector2D.h"
+#include<list>
 
 #define PI 3.141592f
 #define INF 1E-12f
 
-class Particle
-{
+using namespace std;
+
+class Particle{
 public:
 	Vec2f pos;
 	Vec2f vel;
@@ -16,25 +18,27 @@ public:
 
 	float dens;
 	float pres;
-
-	Particle *next;
+	Particle(){	}
+	Particle(const Particle& p){
+		this->acc = p.acc;
+		this->pos = p.pos;
+		this->vel = p.vel;
+		this->ev = p.ev;
+	}
+	~Particle(){}
 };
 
-class Cell
-{
+class Cell{
 public:
-	Particle *head;
+	list<Particle> pList;
 };
 
-class SPHSystem
-{
+class SPHSystem{
 public:
 	SPHSystem();
 	~SPHSystem();
-	void initFluid(int nParticles);
-	void addSingleParticle(Vec2f pos, Vec2f vel);
+	void initFluid();
 	Vec2i calcCellPos(Vec2f pos);
-	uint calcCellHash(Vec2i pos);
 
 	//kernel function
 	float poly6(float r2){ return 315.0f/(64.0f * PI * pow(kernel_radius, 9)) * pow(kernel_radius*kernel_radius-r2, 3); }
@@ -53,7 +57,7 @@ public:
 	uint getNumParticle(){ return numParticle; }
 	Vec2f getWorldSize(){ return worldSize; }
 	Particle* getParticles(){ return particles; }
-	Cell* getCells(){ return cells; }
+	Cell** getCells(){ return cells; }
 
 
 private:
@@ -77,7 +81,9 @@ private:
 	float viscosity;
 
 	Particle *particles;
-	Cell *cells;
+	Cell **cells;
+
+	void compNearDensPressure(Particle& p, Vec2i cellPos);
 };
 
 #endif

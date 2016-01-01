@@ -29,10 +29,8 @@ void drawParticles(){
 	glPointSize(5.0f);
 
 	glBegin(GL_POINTS);
-		for(uint i=0; i<sph->getNumParticle(); i++)
-		{
-			glVertex2f(p[i].pos.x, p[i].pos.y);
-		}
+	for(uint i=0; i<sph->getNumParticle(); i++)
+		glVertex2f(p[i].pos.x, p[i].pos.y);
 	glEnd();
 }
 
@@ -55,11 +53,9 @@ void reshapeFunc(int width, int height){
 	glutReshapeWindow(winX, winY);
 }
 
-int nParticles = 4000;
-
 int main(int argc, char **argv){
 	sph = new SPHSystem();
-	sph->initFluid(nParticles);
+	sph->initFluid();
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutInitWindowSize(winX, winY);

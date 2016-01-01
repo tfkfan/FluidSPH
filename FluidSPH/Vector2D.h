@@ -26,14 +26,13 @@
 
 typedef unsigned int uint;
 
-class Vec2f
-{
+class Vec2f{
 public:
 	float x;
 	float y;
 
 public:
-	Vec2f() {}
+	Vec2f() {x=y=0;}
 	Vec2f(float _x, float _y) { x=_x; y=_y; };
 	Vec2f(Vec2f &vec) { x=vec.x; y=vec.y; };
 
@@ -60,26 +59,24 @@ public:
 	float Length() const { return sqrt(LengthSquared()); }
 };
 
-class Vec2i
-{
+class Vec2i{
 public:
 	int x;
 	int y;
 
 public:
-	Vec2i(){}
+	Vec2i(){x=y=0;}
 	Vec2i(int _x, int _y){ x=_x; y=_y; }
 	Vec2i(Vec2i &vec) { x=vec.x; y=vec.y; }
 };
 
-class Vec2u
-{
+class Vec2u{
 public:
 	uint x;
 	uint y;
 
 public:
-	Vec2u(){}
+	Vec2u(){x=y=0;}
 	Vec2u(uint _x, uint _y){ x=_x; y=_y; }
 	Vec2u(Vec2u &vec) { x=vec.x; y=vec.y; }
 };
