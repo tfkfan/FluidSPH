@@ -5,6 +5,7 @@
 
 #define PI 3.141592f
 #define INF 1E-12f
+#define sqr(x) x*x
 
 class Particle
 {
@@ -37,9 +38,15 @@ public:
 	uint calcCellHash(Vec2i pos);
 
 	//kernel function
-	float poly6(float r2){ return 315.0f/(64.0f * PI * pow(kernel_radius, 9)) * pow(kernel_radius*kernel_radius-r2, 3); }
-	float spiky(float r){ return -45.0f/(PI * pow(kernel_radius, 6)) * (kernel_radius-r) * (kernel_radius-r); }
-	float visco(float r){ return 45.0f/(PI * pow(kernel_radius, 6)) * (kernel_radius-r); }
+	float poly6(float r2){
+		return 315.0f/(64.0f * PI * pow(kernel_radius, 9)) * pow(kernel_radius*kernel_radius-r2, 3); 
+	}
+	float spiky(float r){ 
+		return -45.0f/(PI * pow(kernel_radius, 6)) * (kernel_radius-r) * (kernel_radius-r); 
+	}
+	float visco(float r){ 
+		return 45.0f/(PI * pow(kernel_radius, 6)) * (kernel_radius-r); 
+	}
 
 	//animation
 	void compTimeStep();
@@ -78,6 +85,9 @@ private:
 
 	Particle *particles;
 	Cell *cells;
+	float dx,dy;
+	float ddx,ddy;
+	Vec2f tmpPos;
 };
 
 #endif
