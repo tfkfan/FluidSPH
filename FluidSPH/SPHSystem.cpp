@@ -6,6 +6,8 @@
 using namespace std;
 
 
+float r = 0.1;
+float r_x = 0.6, r_y = 0.3;
 
 SPHSystem::SPHSystem(){
 	kernel_radius = 0.04f;
@@ -22,13 +24,13 @@ SPHSystem::SPHSystem(){
 	totCell = (uint)(gridSize.x) * (uint)(gridSize.y);
 	
 	//params
-	gravity.x = 0.7f;
+	gravity.x = 0.5f;
 	gravity.y = -9.8f;
 	stiffness = 1000.0f;
 	restDensity = 1000.0f;
 	timeStep = 0.0005f;
 	wallDamping = 0.0f;
-	viscosity = 30.1f;
+	viscosity = 10.1f;
 
 	particles = new Particle[maxParticle];
 	cells = new Cell[totCell];
@@ -215,8 +217,6 @@ void SPHSystem::compForce(){
 		p->acc = p->acc/p->dens+gravity;
 	}
 }
-float r = 0.1;
-float r_x = 0.3, r_y = 0.3;
 
 void SPHSystem::advection(){
 	Particle *p;
