@@ -22,23 +22,36 @@ void init(){
 	
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0);
 }
-
+int divider = 100;
 void drawParticles(){
 	Particle *p = sph->getParticles();
 	glColor3f(0.2f, 0.2f, 1.0f);
-	glPointSize(5.0f);
+	glPointSize(2.0f);
 
-	glBegin(GL_POINTS);
-		for(uint i=0; i<sph->getNumParticle(); i++)
-		{
-			glVertex2f(p[i].pos.x, p[i].pos.y);
+	
+		for(uint i=0; i<sph->getNumParticle(); i++){
+			glBegin(GL_POINTS);
+				glVertex2f(p[i].pos.x, p[i].pos.y);
+			glEnd();
+
+			float d = p[i].vel.Length();
+			glBegin(GL_LINES);
+				glVertex2f(p[i].pos.x,p[i].pos.y);
+				if(d<=50)
+					glVertex2f(p[i].pos.x + p[i].vel.x/divider,p[i].pos.y + p[i].vel.y/divider);
+				else
+					glVertex2f(p[i].pos.x + p[i].vel.x/d,p[i].pos.y + p[i].vel.y/d);
+			glEnd();
 		}
-	glEnd();
+
 }
 
 void displayFunc(){
 	sph->animation();
-
+	/*
+		if(p->pos.y<=0.2){
+			if(p->pos.x>=0.7 && p->pos.x<=1.2){
+	*/
 	glClear(GL_COLOR_BUFFER_BIT);
 	drawParticles();
 	glutSwapBuffers();

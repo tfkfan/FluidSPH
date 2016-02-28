@@ -7,13 +7,13 @@ using namespace std;
 
 
 float r = 0.1;
-float r_x = 0.6, r_y = 0.3;
+float r_x = 0.6, r_y = 0.6;
 
 SPHSystem::SPHSystem(){
 	kernel_radius = 0.04f;
 	mass = 0.02f;
 
-	maxParticle = 4000;
+	maxParticle = 8000;
 	numParticle = 0;
 
 	worldSize.x = 2.56f;
@@ -24,13 +24,13 @@ SPHSystem::SPHSystem(){
 	totCell = (uint)(gridSize.x) * (uint)(gridSize.y);
 	
 	//params
-	gravity.x = 0.5f;
-	gravity.y = -9.8f;
+	gravity.x = 1.5f;
+	//gravity.y = -9.8f;
 	stiffness = 1000.0f;
 	restDensity = 1000.0f;
-	timeStep = 0.0005f;
+	timeStep = 0.0002f;
 	wallDamping = 0.0f;
-	viscosity = 10.1f;
+	viscosity = 15.1f;
 
 	particles = new Particle[maxParticle];
 	cells = new Cell[totCell];
@@ -40,8 +40,8 @@ SPHSystem::SPHSystem(){
 	cout << "GridSizeY:" << gridSize.y << endl;
 	cout << "TotalCell:" << totCell << endl;
 
-	dx = kernel_radius*0.8;
-	dy = kernel_radius*0.8;
+	dx = kernel_radius*0.5;
+	dy = kernel_radius*0.5;
 }
 
 SPHSystem::~SPHSystem(){
@@ -51,7 +51,7 @@ SPHSystem::~SPHSystem(){
 
 void SPHSystem::initFluid(){
 	Vec2f pos;
-	Vec2f vel(0.0f, 0.0f);
+	Vec2f vel(3.0f, 0.0f);
 	float x = 0 , y = 0;
 
 	for(int i = 0; i < maxParticle; i++, x+=dx){
@@ -61,6 +61,7 @@ void SPHSystem::initFluid(){
 		}
 		pos.x = x;
 		pos.y = y;
+
 		addSingleParticle(pos, vel);
 	}
 	cout << "NUM Particle:" <<  numParticle << endl;
@@ -234,24 +235,38 @@ void SPHSystem::advection(){
 			p->pos.x = worldSize.x - 0.0001f;
 		}
 		if(p->pos.x >= worldSize.x){
-			//p->vel.x = 2 ;
+			if(p->vel.x>5)
+			p->vel.x = 5;
 			p->pos.x = 0;
 		}
 		if(p->pos.y < 0.0f){
-			//p->vel.x = 5;
+			//p->vel.x = 2;
 			p->vel.y = p->vel.y * wallDamping;
 			p->pos.y = 0.0f;
 		}
-		if(p->pos.y >= worldSize.y){
+		if(p->pos.y >= 1.3){
 			p->vel.y = p->vel.y * wallDamping;
-			p->pos.y = worldSize.y - 0.0001f;
+			p->pos.y = 1.3 - 0.0001f;
+			if(p->vel.x>5)
+			p->vel.x = 5;
 		}
+		/*
 		float d = sqrt((p->pos.x - r_x)*(p->pos.x - r_x)+(p->pos.y - r_y)*(p->pos.y - r_y));
 		if(d<r){
 			p->vel.x = p->vel.y = 0;
 			p->pos.x = prevPos.x;
 			p->pos.y = prevPos.y;
 		}
+		*/
+		
+		if(p->pos.y<=0.2&&p->pos.y>=0.0){
+			if(p->pos.x>=0.8 && p->pos.x<=1.3){
+				p->vel.x = p->vel.y = 0;
+				p->pos.x = prevPos.x;
+				p->pos.y = prevPos.y;
+			}
+		}
+		
 		p->ev=(p->ev+p->vel)/2;
 	}
 }
