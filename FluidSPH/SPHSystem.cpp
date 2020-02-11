@@ -2,245 +2,225 @@
 #include <cmath>
 #include <string>
 #include <iostream>
-
 using namespace std;
-
-SPHSystem::SPHSystem(){
+SPHSystem::SPHSystem() {
 	kernel_radius = 0.04f;
 	mass = 0.02f;
-
-	maxParticle = 10;
+	maxParticle = 8000;
 	numParticle = 0;
-
-	worldSize.x = 2;
-	worldSize.y = 2;
-	cellSize = 1.00f;
-	gridSize.x = (int)(worldSize.x/cellSize)+1;
-	gridSize.y = (int)(worldSize.y/cellSize)+1;
+	worldSize.x = 2.56f;
+	worldSize.y = 2.56f;
+	cellSize = kernel_radius;
+	gridSize.x = (int)(worldSize.x / cellSize) + 2;
+	gridSize.y = (int)(worldSize.y / cellSize) + 2;
 	totCell = (uint)(gridSize.x) * (uint)(gridSize.y);
-	
 	//params
-	gravity.x = 0.0f;
-	gravity.y = -9.8f;
+	gravity.x = 1.2f;
+	//gravity.y = -9.8f;
 	stiffness = 1000.0f;
 	restDensity = 1000.0f;
-	timeStep = 0.0005f;
+	timeStep = 0.0002f;
 	wallDamping = 0.0f;
-	viscosity = 8.1f;
-
+	viscosity = 3.1f;
 	particles = new Particle[maxParticle];
-
-	cells = new Cell*[gridSize.x];
-	for(int i=0;i<gridSize.x;i++)
-		cells[i] = new Cell[gridSize.y];
-
-	for(int i=0;i<gridSize.x;i++)
-		for(int j=0;j<gridSize.y;j++)
-			cells[i][j].pList = new list<Particle>();
-		
-
+	cells = new Cell[totCell];
 	cout << "SPHSystem:" << endl;
 	cout << "GridSizeX:" << gridSize.x << endl;
 	cout << "GridSizeY:" << gridSize.y << endl;
-	//cout << "TotalCell:" << totCell << endl;
+	cout << "TotalCell:" << totCell << endl;
+	dx = kernel_radius * 0.5;
+	dy = kernel_radius * 0.5;
 }
-
-SPHSystem::~SPHSystem(){
+SPHSystem::~SPHSystem() {
 	free(particles);
 	free(cells);
 }
-
-void SPHSystem::initFluid(){
-	
-	float x = 0 , y = worldSize.y;
-	float dx = kernel_radius*0.8,dy = kernel_radius*0.8;
-
-	for(int i = 0; i < maxParticle; i++, x+=dx){
-		if(x>=worldSize.x){
-			x=0;
-			y-=dy;
+void SPHSystem::initFluid() {
+	Vec2f pos;
+	Vec2f vel(3.0f, 0.0f);
+	float x = 0, y = 0;
+	for (int i = 0; i < maxParticle; i++, x += dx) {
+		if (x >= worldSize.x) {
+			x = 0;
+			y += dy;
 		}
-		
-		Vec2f pos;
 		pos.x = x;
 		pos.y = y;
-
-		Particle p;
-		p.pos.x = pos.x;
-		p.pos.y = pos.y;
-
-		particles[numParticle] = p;
-		numParticle++;
+		addSingleParticle(pos, vel);
 	}
-	cout << "NUM Particle:" <<  numParticle << endl;
+	cout << "NUM Particle:" << numParticle << endl;
 }
-
-
-Vec2i SPHSystem::calcCellPos(Vec2f pos){
+void SPHSystem::addSingleParticle(Vec2f pos, Vec2f vel) {
+	Particle* p = &(particles[numParticle]);
+	p->pos = pos;
+	p->vel = vel;
+	p->acc = Vec2f(0.0f, 0.0f);
+	p->ev = vel;
+	p->dens = restDensity;
+	p->next = NULL;
+	numParticle++;
+}
+Vec2i SPHSystem::calcCellPos(Vec2f pos) {
 	Vec2i res;
-	res.x = (int)(pos.x/cellSize);
-	res.y = (int)(pos.y/cellSize);
+	res.x = (int)(pos.x / cellSize);
+	res.y = (int)(pos.y / cellSize);
 	return res;
 }
-	
-
-void SPHSystem::compTimeStep(){
-	Particle *p;
+uint SPHSystem::calcCellHash(Vec2i pos) {
+	if (pos.x < 0 || pos.x >= gridSize.x || pos.y < 0 || pos.y >= gridSize.y) {
+		return 0xffffffff;
+	}
+	uint hash = (uint)(pos.y) * (uint)(gridSize.x) + (uint)(pos.x);
+	if (hash >= totCell) {
+		cout << "ERROR!" << endl;
+		getchar();
+	}
+	return hash;
+}
+void SPHSystem::compTimeStep() {
+	Particle* p;
 	float maxAcc = 0.0f;
 	float curAcc;
-	for(uint i=0; i<numParticle; i++){
-		p = &(particles[i]);
-		curAcc = p->acc.Length();
-		if(curAcc > maxAcc) maxAcc=curAcc;
-	}
-
-	if(maxAcc > 0.0f)
-		timeStep = kernel_radius/maxAcc*0.4f;
+	
+		for (uint i = 0; i < numParticle; i++) {
+			p = &(particles[i]);
+			curAcc = p->acc.Length();
+			if (curAcc > maxAcc) maxAcc = curAcc;
+		}
+	if (maxAcc > 0.0f)
+		timeStep = kernel_radius / maxAcc * 0.4f;
 	else
 		timeStep = 0.002f;
 }
-
-void SPHSystem::buildGrid(){
-	for(int i=0;i<gridSize.x;i++)
-		for(int j=0;j<gridSize.y;j++)
-			cells[i][j].pList->clear();
-		
-	
-	for(int i=0;i<maxParticle;i++){
-			Vec2i index = calcCellPos(particles[i].pos);
-			
-			Cell& c = cells[index.x][index.y];
-			list<Particle>& l = *c.pList;
-			l.push_back(particles[i]);
+void SPHSystem::buildGrid() {
+	for (uint i = 0; i < totCell; i++) cells[i].head = NULL;
+	Particle* p;
+	uint hash;
+	for (uint i = 0; i < numParticle; i++) {
+		p = &(particles[i]);
+		hash = calcCellHash(calcCellPos(p->pos));
+		Cell cell = cells[hash];
+		if (cells[hash].head == NULL) {
+			p->next = NULL;
+			cells[hash].head = p;
 		}
-}
-void SPHSystem::compNearDensPressure(Particle& p, Vec2i cellPos){
-	Vec2i nearPos;
-	p.dens = 0.0f;
-	p.pres = 0.0f;
-
-	for(int m = -1; m <= 1; m++)
-		for(int n = -1; n <= 1; n++){
-			nearPos.x = cellPos.x + m;
-			nearPos.y = cellPos.y + n;
-
-			if(nearPos.x<0||nearPos.x>=gridSize.x||nearPos.y<0||nearPos.y>=gridSize.y)
-				continue;
-
-			list<Particle>& np = *cells[nearPos.x][nearPos.y].pList;
-
-			if(np.empty())
-				continue;
-
-			for (list<Particle>::iterator it = np.begin(); it != np.end(); it++){
-				Vec2f distVec = it->pos - p.pos;
-				float dist = distVec.LengthSquared();
-					
-				//Сомнительный код
-				if(dist>=kernel_radius*kernel_radius)
-					continue;
-
-				p.dens = p.dens + mass * poly6(dist);
-			}	
+		else {
+			p->next = cells[hash].head;
+			cells[hash].head = p;
 		}
-	p.pres = (pow(p.dens / restDensity, 7) - 1) * stiffness;
+	}
 }
-void SPHSystem::compDensPressure(){
+void SPHSystem::compDensPressure() {
+	Particle* p;
+	Particle* np;
 	Vec2i cellPos;
-
-	for(int i = 0 ; i < gridSize.x; i++)
-		for(int j = 0;j < gridSize.y; j++){
-			Cell cell = cells[i][j];
-			cellPos.x = i;
-			cellPos.y = j;
-
-			for (list<Particle>::iterator p_it = cell.pList->begin(); p_it != cell.pList->end(); p_it++)
-				compNearDensPressure(*p_it, cellPos);
-		}
-}
-
-void SPHSystem::compNearForce(Particle& p,Vec2i cellPos){
 	Vec2i nearPos;
-	for(int m = -1; m <= 1; m++)
-		for(int n = -1; n <= 1; n++){
-			nearPos.x = cellPos.x + n;
-			nearPos.y = cellPos.y + m;
-
-			if(nearPos.x<0||nearPos.x>=gridSize.x||nearPos.y<0||nearPos.y>=gridSize.y)
-				continue;
-
-			list<Particle>& np = *cells[nearPos.x][nearPos.y].pList;
-			if(!np.empty()){
-				for (list<Particle>::iterator it = np.begin(); it != np.end(); it++){
-					Vec2f distVec = p.pos - it->pos;
+	uint hash;
+	for (uint k = 0; k < numParticle; k++) {
+		p = &(particles[k]);
+		p->dens = 0.0f;
+		p->pres = 0.0f;
+		cellPos = calcCellPos(p->pos);
+		for (int i = -1; i <= 1; i++) {
+			for (int j = -1; j <= 1; j++) {
+				nearPos.x = cellPos.x + i;
+				nearPos.y = cellPos.y + j;
+				hash = calcCellHash(nearPos);
+				if (hash == 0xffffffff) continue;
+				
+					np = cells[hash].head;
+				while (np != NULL) {
+					Vec2f distVec = np->pos - p->pos;
 					float dist2 = distVec.LengthSquared();
-
-					if(dist2 < kernel_radius*kernel_radius && dist2 > INF){
-						float dist = sqrt(dist2);
-						float V = mass / it->dens;
-
-						float tempForce = V * (p.pres + it->pres) * spiky(dist);
-						p.acc = p.acc - distVec*tempForce/dist;
-
-						Vec2f relVel;
-						relVel = it->ev-p.ev;
-						tempForce = V * viscosity * visco(dist);
-						p.acc = p.acc + relVel*tempForce; 
+					if (dist2 < INF || dist2 >= kernel_radius * kernel_radius) {
+						np = np->next;
+						continue;
 					}
+					p->dens = p->dens + mass * poly6(dist2);
+					np = np->next;
 				}
 			}
 		}
+		p->dens = p->dens + mass * poly6(0.0f);
+		p->pres = (pow(p->dens / restDensity, 7) - 1) * stiffness;
+	}
 }
-void SPHSystem::compForce(){
+void SPHSystem::compForce() {
+	Particle* p;
+	Particle* np;
 	Vec2i cellPos;
-	for(int i = 0 ; i < gridSize.x; i++)
-		for(int j = 0;j < gridSize.y; j++){
-
-			Cell cell = cells[i][j];
-
-			cellPos.x = i;
-			cellPos.y = j;
-
-			for (list<Particle>::iterator p_it = cell.pList->begin(); p_it != cell.pList->end(); p_it++)
-				compNearForce(*p_it,cellPos);
-		}
-}
-
-void SPHSystem::advection(){
-	for(int i = 0 ; i < gridSize.x; i++)
-		for(int j = 0;j < gridSize.y; j++){
-			list<Particle>& l = *cells[i][j].pList;
-			for (list<Particle>::iterator it = l.begin(); it != l.end(); it++){
-				Particle& p = *it;
-				p.vel = p.vel + p.acc*timeStep;
-				p.pos = p.pos + p.vel*timeStep;
-
-				if(p.pos.x < 0.0f){
-					p.vel.x = p.vel.x * wallDamping;
-					p.pos.x = 0.0f;
+	Vec2i nearPos;
+	uint hash;
+	for (uint k = 0; k < numParticle; k++) {
+		p = &(particles[k]);
+		p->acc = Vec2f(0.0f, 0.0f);
+		cellPos = calcCellPos(p->pos);
+		for (int i = -1; i <= 1; i++) {
+			for (int j = -1; j <= 1; j++) {
+				nearPos.x = cellPos.x + i;
+				nearPos.y = cellPos.y + j;
+				hash = calcCellHash(nearPos);
+				if (hash == 0xffffffff) continue;
+				np = cells[hash].head;
+				while (np != NULL) {
+					Vec2f distVec = p->pos - np->pos;
+					float dist2 = distVec.LengthSquared();
+					float dist = sqrt(dist2);
+					if (dist2 < kernel_radius * kernel_radius && dist2 > INF) {
+						float V = mass / p->dens;
+						float tempForce = V * 0.5 * (p->pres + np->pres) * spiky(dist);
+						p->acc = p->acc - distVec * tempForce / dist;
+						Vec2f relVel;
+						
+							relVel = np->vel - p->vel;
+						tempForce = V * viscosity * visco(dist);
+						p->acc = p->acc + relVel * tempForce;
+					}
+					np = np->next;
 				}
-				if(p.pos.x >= worldSize.x){
-					p.vel.x = p.vel.x * wallDamping;
-					p.pos.x = worldSize.x - 0.0001f;
-				}
-				if(p.pos.y < 0.0f){
-					p.vel.y = p.vel.y * wallDamping;
-					p.pos.y = 0.0f;
-				}
-				if(p.pos.y >= worldSize.y){
-					p.vel.y = p.vel.y * wallDamping;
-					p.pos.y = worldSize.y - 0.0001f;
-				}
-
-				p.ev=(p.ev+p.vel)/2;
 			}
+		}
+		p->acc = p->acc / p->dens + gravity;
+	}
+}
+void SPHSystem::advection() {
+	Particle* p;
+	Vec2f prevPos;
+	for (uint i = 0; i < numParticle; i++) {
+		p = &(particles[i]);
+		p->vel = p->vel + p->acc * timeStep;
+		prevPos.x = p->pos.x;
+		prevPos.y = p->pos.y;
+		p->pos = p->pos + p->vel * timeStep;
+		if (p->pos.x < 0.0f) {
+			p->pos.x = worldSize.x - 0.0001f;
+		}
+		if (p->pos.x >= worldSize.x) {
+			p->vel.x = 2;
+			p->pos.x = 0;
+		}
+		if (p->pos.y < 0.0f) {
+			p->vel.y = p->vel.y * wallDamping;
+			p->pos.y = 0.0f;
+		}
+		if (p->pos.y >= 1.3) {
+			p->vel.y = p->vel.y * wallDamping;
+			p->pos.y = 1.3 - 0.0001f;
+		}
+		if (p->pos.y <= 0.3 && p->pos.y >= 0.0) {
+			if (p->pos.x >= 1.1 && p->pos.x <= 1.3) {
+				p->vel.x = p->vel.y = 0;
+				p->pos.x = prevPos.x;
+				p->pos.y = prevPos.y;
+			}
+		}
+		p->ev = (p->ev + p->vel) / 2;
 	}
 }
 
-void SPHSystem::animation(){
+void SPHSystem::animation() {
 	buildGrid();
 	compDensPressure();
 	compForce();
-	//compTimeStep();
 	advection();
 }
